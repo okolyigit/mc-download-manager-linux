@@ -1,0 +1,172 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mi="using:Material.Icons.Avalonia"
+        xmlns:local="using:MCDM"
+        x:Class="MCDM.MainWindow"
+        Title="MC Download Manager" Width="1080" Height="620" MinWidth="780" MinHeight="420"
+        WindowStartupLocation="CenterScreen">
+
+  <!-- Same layout as the macOS app: sidebar with categories, toolbar, table, status bar. -->
+  <Grid ColumnDefinitions="236,*" Background="{DynamicResource SidebarBrush}">
+
+    <!-- Sidebar -->
+    <DockPanel Grid.Column="0" Margin="8,12,4,10">
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,0,0,12" Spacing="10">
+        <Image x:Name="Logo" Width="26" Height="26" />
+        <TextBlock Text="MC Download Manager" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" />
+      </StackPanel>
+      <ListBox x:Name="Sidebar" Background="Transparent" SelectionChanged="Sidebar_Changed">
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="CornerRadius" Value="6" />
+          </Style>
+        </ListBox.Styles>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="local:SidebarEntry">
+            <DockPanel Margin="{Binding Indent}">
+              <mi:MaterialIcon Kind="{Binding Icon}" Width="18" Height="18" Margin="0,0,10,0" />
+              <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" Classes="secondary" FontSize="12" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding Label}" FontWeight="{Binding Weight}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DockPanel>
+
+    <!-- Content card -->
+    <Border Grid.Column="1" Margin="0,8,8,8" CornerRadius="8" BorderThickness="1"
+            Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource CardStrokeBrush}">
+      <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Toolbar -->
+        <DockPanel Margin="12,10,12,8">
+          <Button DockPanel.Dock="Right" Classes="icon" Click="Settings_Click" ToolTip.Tip="{x:Static local:S.Settings}" Margin="6,0,0,0">
+            <mi:MaterialIcon Kind="CogOutline" />
+          </Button>
+          <TextBox x:Name="SearchBox" DockPanel.Dock="Right" Width="240" PlaceholderText="{x:Static local:S.SearchHint}" TextChanged="Search_Changed"
+                   VerticalContentAlignment="Center">
+            <TextBox.InnerLeftContent>
+              <mi:MaterialIcon Kind="Magnify" Width="16" Height="16" Margin="8,0,0,0" Classes="secondary" />
+            </TextBox.InnerLeftContent>
+          </TextBox>
+          <StackPanel Orientation="Horizontal">
+            <Button Classes="accent" Click="Add_Click" Padding="14,7" Margin="0,0,12,0" ToolTip.Tip="Ctrl+N">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <mi:MaterialIcon Kind="LinkPlus" Width="18" Height="18" />
+                <TextBlock Text="{x:Static local:S.AddDownload}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button Classes="icon" Click="Resume_Click" ToolTip.Tip="{x:Static local:S.Resume}"><mi:MaterialIcon Kind="Play" /></Button>
+            <Button Classes="icon" Click="Pause_Click" ToolTip.Tip="{x:Static local:S.Pause}"><mi:MaterialIcon Kind="Pause" /></Button>
+            <Button Classes="icon" Click="Cancel_Click" ToolTip.Tip="{x:Static local:S.Cancel}"><mi:MaterialIcon Kind="Close" /></Button>
+            <Button Classes="icon" Click="Remove_Click" ToolTip.Tip="{x:Static local:S.Remove}"><mi:MaterialIcon Kind="TrashCanOutline" /></Button>
+            <Button Classes="icon" Click="Folder_Click" ToolTip.Tip="{x:Static local:S.ShowInFolder}"><mi:MaterialIcon Kind="FolderOpenOutline" /></Button>
+          </StackPanel>
+        </DockPanel>
+
+        <!-- List -->
+        <DataGrid x:Name="Grid" Grid.Row="1" Margin="4,0" IsReadOnly="True" SelectionMode="Extended" GridLinesVisibility="None"
+                  HeadersVisibility="Column" CanUserResizeColumns="True" CanUserSortColumns="True" RowHeight="50"
+                  Background="Transparent" DoubleTapped="Grid_DoubleTapped" KeyDown="Grid_KeyDown">
+          <DataGrid.Columns>
+            <DataGridTemplateColumn Header="{x:Static local:S.ColName}" Width="*" MinWidth="200" SortMemberPath="FileName">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="local:DownloadItem">
+                  <DockPanel Margin="8,0" VerticalAlignment="Center" ToolTip.Tip="{Binding Url}">
+                    <mi:MaterialIcon Kind="{Binding Category, Converter={x:Static local:Converters.Icon}}" Width="22" Height="22" Margin="0,0,10,0" Classes="secondary" />
+                    <StackPanel VerticalAlignment="Center">
+                      <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding Subtitle}" FontSize="12" Classes="secondary" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DockPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="{x:Static local:S.ColSize}" Width="95" SortMemberPath="TotalBytes">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="local:DownloadItem">
+                  <TextBlock Text="{Binding SizeText}" VerticalAlignment="Center" Margin="8,0" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="{x:Static local:S.ColStatus}" Width="210" SortMemberPath="State">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="local:DownloadItem">
+                  <StackPanel VerticalAlignment="Center" Margin="8,0,12,0" Spacing="5">
+                    <TextBlock Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding ErrorMessage}"
+                               Classes.error="{Binding State, Converter={x:Static local:Converters.IsFailed}}" />
+                    <local:SegmentBar Height="5" MaxWidth="170" HorizontalAlignment="Stretch" IsVisible="{Binding ShowProgress}"
+                                      Segments="{Binding Segments}" Total="{Binding TotalBytes}" Progress="{Binding Progress}" State="{Binding State}" />
+                  </StackPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="{x:Static local:S.ColSpeed}" Width="100" SortMemberPath="Speed">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="local:DownloadItem">
+                  <TextBlock Text="{Binding SpeedText}" VerticalAlignment="Center" Margin="8,0" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="{x:Static local:Converters.EtaHeader}" Width="100" SortMemberPath="Eta">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="local:DownloadItem">
+                  <TextBlock Text="{Binding Eta, Converter={x:Static local:Converters.Eta}}" VerticalAlignment="Center" Margin="8,0" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="{x:Static local:S.ColDate}" Width="130" SortMemberPath="CreatedAt">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="local:DownloadItem">
+                  <TextBlock Text="{Binding CreatedAt, Converter={x:Static local:Converters.Added}}" Classes="secondary" VerticalAlignment="Center" Margin="8,0" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+          <DataGrid.ContextMenu>
+            <ContextMenu x:Name="RowMenu" Opening="RowMenu_Opening">
+              <MenuItem x:Name="MenuOpen" Header="{x:Static local:S.Open}" Click="Open_Click" />
+              <MenuItem x:Name="MenuFolder" Header="{x:Static local:S.ShowInFolder}" Click="Folder_Click" />
+              <MenuItem x:Name="MenuDetails" Header="{x:Static local:S.Details}" Click="Details_Click" />
+              <MenuItem x:Name="MenuCopy" Header="{x:Static local:S.CopyLink}" Click="CopyLink_Click" />
+              <Separator />
+              <MenuItem x:Name="MenuResume" Header="{x:Static local:S.Resume}" Click="Resume_Click" />
+              <MenuItem x:Name="MenuPause" Header="{x:Static local:S.Pause}" Click="Pause_Click" />
+              <MenuItem x:Name="MenuCancel" Header="{x:Static local:S.Cancel}" Click="Cancel_Click" />
+              <Separator />
+              <MenuItem x:Name="MenuRemove" Header="{x:Static local:S.Remove}" Click="Remove_Click" />
+              <MenuItem x:Name="MenuDelete" Header="{x:Static local:S.RemoveAndDelete}" Click="RemoveDelete_Click" />
+              <Separator />
+              <MenuItem Header="{x:Static local:S.AddDownload}" Click="Add_Click" />
+              <MenuItem Header="{x:Static local:S.PauseAll}" Click="PauseAll_Click" />
+              <MenuItem Header="{x:Static local:S.ResumeAll}" Click="ResumeAll_Click" />
+              <MenuItem Header="{x:Static local:S.ClearFinished}" Click="ClearFinished_Click" />
+            </ContextMenu>
+          </DataGrid.ContextMenu>
+        </DataGrid>
+
+        <!-- Empty state -->
+        <StackPanel x:Name="EmptyState" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" Spacing="6">
+          <mi:MaterialIcon Kind="ArrowDownCircleOutline" Width="56" Height="56" Classes="secondary" />
+          <TextBlock x:Name="EmptyTitle" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,6,0,0" />
+          <TextBlock x:Name="EmptyHint" Classes="secondary" HorizontalAlignment="Center" TextAlignment="Center" />
+        </StackPanel>
+
+        <!-- Status bar -->
+        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource DividerBrush}" Padding="14,7">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+              <mi:MaterialIcon Kind="FormatListBulleted" Width="15" Height="15" Classes="secondary" />
+              <TextBlock x:Name="ActiveText" Classes="secondary" FontSize="12" Margin="0,0,14,0" VerticalAlignment="Center" />
+              <mi:MaterialIcon Kind="CloudDownloadOutline" Width="15" Height="15" Classes="secondary" />
+              <TextBlock x:Name="SpeedText" Classes="secondary" FontSize="12" VerticalAlignment="Center" />
+            </StackPanel>
+            <Ellipse x:Name="BridgeDot" Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBlock x:Name="BridgeText" Classes="secondary" FontSize="12" VerticalAlignment="Center" />
+          </DockPanel>
+        </Border>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>
