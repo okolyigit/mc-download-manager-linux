@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="MCDM.Core/MCDM.Core.csproj" />
+  <Project Path="MCDownloadManager.Linux/MCDownloadManager.Linux.csproj" />
+  <Project Path="Tests/Tests.csproj" />
+</Solution>

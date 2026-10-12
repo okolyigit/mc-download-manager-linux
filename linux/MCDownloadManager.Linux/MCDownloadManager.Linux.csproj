@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>MCDM</RootNamespace>
+    <AssemblyName>mc-download-manager</AssemblyName>
+    <Product>MC Download Manager</Product>
+    <Version>1.0.0</Version>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MCDM.Core\MCDM.Core.csproj" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\MCDownloadManager\app.ico" Link="app.ico" />
+    <!-- Upstream's browser extension shipped next to the binary; copied to the data folder at startup for "Load unpacked". -->
+    <None Include="..\..\Extension\**\*" LinkBase="Extension" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

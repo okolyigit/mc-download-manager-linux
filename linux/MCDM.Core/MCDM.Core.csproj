@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Upstream's engine files compiled in place (not copied), so `git merge upstream/main` brings their changes in directly. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>MCDM</RootNamespace>
+    <AssemblyName>MCDM.Core</AssemblyName>
+    <!-- Reported to the browser extension by GET /ping (BridgeServer.Version). -->
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\MCDownloadManager\Models.cs" Link="Upstream\Models.cs" />
+    <Compile Include="..\..\MCDownloadManager\SegmentedDownloader.cs" Link="Upstream\SegmentedDownloader.cs" />
+    <Compile Include="..\..\MCDownloadManager\DownloadStore.cs" Link="Upstream\DownloadStore.cs" />
+    <Compile Include="..\..\MCDownloadManager\BridgeServer.cs" Link="Upstream\BridgeServer.cs" />
+    <Compile Include="..\..\MCDownloadManager\Tools.cs" Link="Upstream\Tools.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+  </ItemGroup>
+
+</Project>
