@@ -17,18 +17,19 @@ public static class VideoDownloader
 {
     public static string BinDir => Path.Combine(AppSettings.DataDir, "bin");
 
-    static string? Locate(string exe, string? custom = null)
+    static string? Locate(string tool, string? custom = null)
     {
+        var exe = tool + Platform.ExeSuffix;
         var candidates = new List<string?> { custom, Path.Combine(BinDir, exe), Path.Combine(AppContext.BaseDirectory, "tools", exe) };
-        candidates.AddRange((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries)
+        candidates.AddRange((Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
             .Select(d => Path.Combine(d.Trim('"'), exe)));
         return candidates.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c) && File.Exists(c));
     }
 
-    public static string? LocateYtDlp(string custom) => Locate("yt-dlp.exe", custom);
-    public static string? LocateFfmpeg() => Locate("ffmpeg.exe");
+    public static string? LocateYtDlp(string custom) => Locate("yt-dlp", custom);
+    public static string? LocateFfmpeg() => Locate("ffmpeg");
     /// deno is the JavaScript runtime yt-dlp uses to solve YouTube's n/signature challenges.
-    public static string? LocateDeno() => Locate("deno.exe");
+    public static string? LocateDeno() => Locate("deno");
 
     public static bool IsYouTube(Uri url)
     {

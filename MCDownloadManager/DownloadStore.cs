@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using Microsoft.Win32;
 
 namespace MCDM;
 
@@ -417,7 +416,7 @@ public sealed class DownloadStore
         if (deleteFile && item.FinalPath is string fp && File.Exists(fp))
         {
             // Recycle Bin, so the user can recover the file.
-            try { Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(fp, Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs, Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin); } catch { }
+            try { Platform.MoveToTrash(fp); } catch { }
         }
         Items.Remove(item);
         _samples.Remove(item.Id);
@@ -431,11 +430,11 @@ public sealed class DownloadStore
 
     public void ShowInFolder(DownloadItem item)
     {
-        if (item.FinalPath is string fp && File.Exists(fp)) Process.Start("explorer.exe", $"/select,\"{fp}\"");
+        if (item.FinalPath is string fp && File.Exists(fp)) Platform.ShowInFolder(fp);
         else
         {
             var dir = DestinationDirectory(item);
-            Process.Start("explorer.exe", $"\"{(Directory.Exists(dir) ? dir : item.Directory)}\"");
+            Platform.ShowInFolder(Directory.Exists(dir) ? dir : item.Directory);
         }
     }
 
@@ -546,19 +545,11 @@ public sealed class DownloadStore
     /// Tags a downloaded file like a browser download, so SmartScreen/Office treat it as coming from the internet.
     static void MarkOfTheWeb(string file, string url, string? referer)
     {
-        try
-        {
-            var body = "[ZoneTransfer]\r\nZoneId=3\r\n" + (referer != null ? $"ReferrerUrl={referer}\r\n" : "") + $"HostUrl={url}\r\n";
-            File.WriteAllText(file + ":Zone.Identifier", body);
-        }
+        try { Platform.MarkOfTheWeb(file, url, referer); }
         catch { }
     }
 
-    static string? ExtensionForMime(string mime)
-    {
-        using var key = Registry.ClassesRoot.OpenSubKey($@"MIME\Database\Content Type\{mime}");
-        return key?.GetValue("Extension") as string;
-    }
+    static string? ExtensionForMime(string mime) => Platform.ExtensionForMime(mime);
 
     static void TryDelete(string path) { try { File.Delete(path); } catch { } }
 
@@ -569,10 +560,13 @@ public sealed class DownloadStore
     }
 
     static readonly Regex Reserved = new(@"^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(\..*)?$", RegexOptions.IgnoreCase);
+    /// Windows' invalid file name characters on every OS (Path.GetInvalidFileNameChars is only '/' and '\0' on Linux),
+    /// so names stay valid when files are copied to NTFS/exFAT drives.
+    static readonly char[] InvalidChars = "\"<>|:*?\\/".Concat(Enumerable.Range(0, 32).Select(i => (char)i)).ToArray();
 
     public static string Sanitize(string s)
     {
-        var invalid = Path.GetInvalidFileNameChars();
+        var invalid = InvalidChars;
         var n = new string(s.Select(c => invalid.Contains(c) ? '_' : c).ToArray()).Trim().TrimEnd('.', ' ');
         if (n.StartsWith('.')) n = "_" + n;
         if (Reserved.IsMatch(n)) n = "_" + n;
