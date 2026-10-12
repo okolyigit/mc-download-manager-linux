@@ -1,3 +1,6 @@
 * text=auto
 *.png binary
 *.ico binary
+# This fork's READMEs describe the Linux app; keep them when merging upstream (needs: git config merge.ours.driver true)
+README.md merge=ours
+README.tr.md merge=ours
